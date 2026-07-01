@@ -169,6 +169,36 @@ pub enum Event<'a, T: 'static> {
     /// This lets you determine why the scene was requested.
     options: objc2::rc::Retained<objc2_ui_kit::UISceneConnectionOptions>,
   },
+
+  /// Emitted when the application has been started.
+  ///
+  /// ## Platform-specific
+  ///
+  /// - **OHOS**: Triggered by `onAbilityStart` lifecycle callback.
+  /// - **Other**: Unsupported.
+  Started,
+
+  /// Emitted when the system requests the application to save its state.
+  ///
+  /// ## Platform-specific
+  ///
+  /// - **OHOS**: Triggered by `onAbilitySaveState` lifecycle callback.
+  /// - **Other**: Unsupported.
+  SaveStateRequested,
+
+  /// Emitted when the application's content rect has changed (e.g. keyboard shown/hidden).
+  ///
+  /// ## Platform-specific
+  ///
+  /// - **OHOS**: Triggered by `window.on("contentRectChange")` callback.
+  /// - **Other**: Unsupported.
+  #[cfg(target_env = "ohos")]
+  ContentRectChanged {
+    /// The new content rectangle (position and size).
+    rect: (i32, i32, i32, i32),
+    /// Reason for the change.
+    reason: u32,
+  },
 }
 
 impl<T: Clone> Clone for Event<'static, T> {
@@ -202,6 +232,13 @@ impl<T: Clone> Clone for Event<'static, T> {
         scene: scene.clone(),
         options: options.clone(),
       },
+      Started => Started,
+      SaveStateRequested => SaveStateRequested,
+      #[cfg(target_env = "ohos")]
+      ContentRectChanged { rect, reason } => ContentRectChanged {
+        rect: *rect,
+        reason: *reason,
+      },
     }
   }
 }
@@ -228,6 +265,10 @@ impl<'a, T> Event<'a, T> {
       }),
       #[cfg(target_os = "ios")]
       SceneRequested { scene, options } => Ok(SceneRequested { scene, options }),
+      Started => Ok(Started),
+      SaveStateRequested => Ok(SaveStateRequested),
+      #[cfg(target_env = "ohos")]
+      ContentRectChanged { rect, reason } => Ok(ContentRectChanged { rect, reason }),
     }
   }
 
@@ -256,6 +297,10 @@ impl<'a, T> Event<'a, T> {
       }),
       #[cfg(target_os = "ios")]
       SceneRequested { scene, options } => Some(SceneRequested { scene, options }),
+      Started => Some(Started),
+      SaveStateRequested => Some(SaveStateRequested),
+      #[cfg(target_env = "ohos")]
+      ContentRectChanged { rect, reason } => Some(ContentRectChanged { rect, reason }),
     }
   }
 }
